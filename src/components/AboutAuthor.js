@@ -1,5 +1,11 @@
-import React, {Component} from 'react';
+import React, { PropTypes, Component } from 'react';
 import {Image, PageHeader, Grid, Row, Col} from 'react-bootstrap';
+import { connect } from 'react-redux';
+import { signIn } from '../actions/UserActions';
+
+@connect(state => ({
+    user: state.user
+}), {signIn})
 
 export default class AboutAuthor extends Component {
     render() {
@@ -7,7 +13,7 @@ export default class AboutAuthor extends Component {
             <Grid>
                 <Row className='show-grid'>
                     <Col md={12}>
-                        <PageHeader>About page</PageHeader>
+                        <PageHeader>About page. User name - {this.props.user.username}</PageHeader>
                     </Col>
                 </Row>
 
@@ -47,12 +53,8 @@ export default class AboutAuthor extends Component {
             </Grid>
         );
     }
+}
 
-    componentDidMount() {
-        fetch('/test', {method: 'POST'})
-            .then(function(response) {
-                console.log(response);
-            })
-            .catch( alert );
-    }
+AboutAuthor.propTypes = {
+    user: PropTypes.object
 }

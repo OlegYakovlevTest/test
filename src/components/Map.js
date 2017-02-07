@@ -13,7 +13,6 @@ export default class Authorization extends Component {
     }
 
     render() {
-        console.log('render');
         return (
             <div>
                 <PageHeader>Map page</PageHeader>
@@ -35,7 +34,6 @@ export default class Authorization extends Component {
     }
 
     setLocation = (position) => {
-        console.log('-------------', position.coords.latitude, position.coords.longitude);
         this.setState({
             latitude: position.coords.latitude,
             longitude: position.coords.longitude
