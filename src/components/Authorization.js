@@ -12,8 +12,8 @@ export default class Authorization extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            isBtnDisabled: false
-        }
+            isBtnDisabled: true
+        };
         this.login = '';
         this.password = '';
     }
