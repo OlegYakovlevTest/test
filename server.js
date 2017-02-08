@@ -20,7 +20,6 @@ const JwtStrategy = passportJWT.Strategy;
 
 const UserModel = require('./libs/mongoose').UserModel;
 const MarkerModel = require('./libs/mongoose').MarkerModel;
-const saveMarkers = require('./libs/mongoose').saveMarkers;
 
 const jwtOptions = {
     jwtFromRequest: ExtractJwt.fromAuthHeader(),
@@ -130,7 +129,6 @@ app.post('/markers', passport.authenticate('jwt', { session: false }), function(
     const markersWithId = req.body.filter(item => {
         return item._id;
     });
-    saveMarkers(markersForSave);
     MarkerModel.insertMany(markersForSave, (err, markers) => {
         if (err) {
             res.status(500).json({message:"Server error"});
