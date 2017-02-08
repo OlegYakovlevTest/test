@@ -1,4 +1,8 @@
 {
+  "jwtSecret": "SecretKey",
+  "jwtSession": {
+    "session": false
+  },
   "port" : 3000,
   "mongoose": {
     "uri": "mongodb://localhost/test"

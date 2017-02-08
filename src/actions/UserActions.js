@@ -2,51 +2,56 @@ import $ from 'jquery';
 import { browserHistory } from 'react-router';
 
 import {
-    GET_USER_REQUEST,
-    GET_USER_SUCCESS,
-    GET_USER_FAIL,
+    LOGIN_REQUEST,
+    LOGIN_SUCCESS,
+    LOGIN_FAIL,
     CREATE_USER_REQUEST,
     CREATE_USER_SUCCESS,
     CREATE_USER_FAIL,
+    SET_USER,
     LOG_OUT
 } from '../constants/User';
 
 export function signIn(signInData) {
+    // headers: {
+    //     Authorization: 'JWT token'
+    // },
     return (dispatch) => {
         dispatch({
-            type: GET_USER_REQUEST
+            type: LOGIN_REQUEST
         });
 
         $.ajax({
-            method: 'GET',
-            url: '/api/user',
+            method: 'POST',
+            url: '/signin',
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
             },
-            data: signInData
+            data: JSON.stringify(signInData)
         }).done(function (data, textStatus, jqXHR) {
-            if (!data.user) {
+            if (!data) {
                 console.error('Looks like there was a problem. Status Code: ' +
                     jqXHR.status);
                 return;
             }
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('currentUser', JSON.stringify(data.user));
             browserHistory.push('/about');
             dispatch({
-                type: GET_USER_SUCCESS,
+                type: LOGIN_SUCCESS,
                 data
             });
         }).fail(function (jqXHR, textStatus) {
             console.error(textStatus);
             dispatch({
-                type: GET_USER_FAIL
+                type: LOGIN_FAIL
             });
         });
     }
 }
 
 export function signUp(signUpData) {
-    console.log(signUpData);
 
     return (dispatch) => {
         dispatch({
@@ -55,7 +60,7 @@ export function signUp(signUpData) {
 
         $.ajax({
             method: 'POST',
-            url: '/api/user',
+            url: '/signup',
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json'
@@ -82,11 +87,20 @@ export function signUp(signUpData) {
 }
 
 export function logOut() {
-
+    localStorage.clear();
     return (dispatch) => {
         browserHistory.push('/auth');
         dispatch({
             type: LOG_OUT
+        });
+    }
+}
+
+export function setUser(user) {
+    return (dispatch) => {
+        dispatch({
+            type: SET_USER,
+            user
         });
     }
 }

@@ -4,6 +4,7 @@ import { Link } from 'react-router';
 import { Nav, NavItem } from 'react-bootstrap';
 import { connect } from 'react-redux';
 import * as userActions from '../actions/UserActions';
+import * as markerActions from '../actions/MarkerActions';
 
 class App extends Component {
     render() {
@@ -25,17 +26,26 @@ class App extends Component {
     logOut = () => {
         this.props.userActions.logOut();
     }
+
+    componentDidMount() {
+        const currentUser = localStorage.getItem('currentUser');
+        if(currentUser) {
+            this.props.userActions.setUser(JSON.parse(currentUser));
+        }
+    }
 }
 
 function mapStateToProps (state) {
     return {
-        user: state.user
+        user: state.user,
+        markers: state.marker.markers
     };
 }
 
 function mapDispatchToProps(dispatch) {
     return {
-        userActions: bindActionCreators(userActions, dispatch)
+        userActions: bindActionCreators(userActions, dispatch),
+        markerActions: bindActionCreators(markerActions, dispatch),
     };
 }
 

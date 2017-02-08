@@ -1,10 +1,11 @@
 import {
-    GET_USER_REQUEST,
-    GET_USER_SUCCESS,
-    GET_USER_FAIL,
+    LOGIN_REQUEST,
+    LOGIN_SUCCESS,
+    LOGIN_FAIL,
     CREATE_USER_REQUEST,
     CREATE_USER_SUCCESS,
     CREATE_USER_FAIL,
+    SET_USER,
     LOG_OUT
 } from '../constants/User';
 
@@ -15,11 +16,11 @@ const initialState = {
 export default function user(state = initialState, action) {
 
     switch (action.type) {
-        case GET_USER_REQUEST:
+        case LOGIN_REQUEST:
             return { ...state, fetching: true };
-        case GET_USER_SUCCESS:
+        case LOGIN_SUCCESS:
             return { ...state, ...action.data.user, fetching: false };
-        case GET_USER_FAIL:
+        case LOGIN_FAIL:
             return { ...state, error: action.error, fetching: false };
         case CREATE_USER_REQUEST:
             return { ...state, fetching: true };
@@ -27,6 +28,8 @@ export default function user(state = initialState, action) {
             return { ...state, ...action.data.user, fetching: false };
         case CREATE_USER_FAIL:
             return { ...state, error: action.error, fetching: false };
+        case SET_USER:
+            return { ...state, ...action.user };
         case LOG_OUT:
             return { ...state, username: null, fetching: false };
 

@@ -37,4 +37,26 @@ User.virtual('userId')
 
 const UserModel = mongoose.model('User', User);
 
+const Marker = new Schema({
+    username: {
+        type: String,
+        required: true
+    },
+    lat: {
+        type: String,
+        required: true
+    },
+    lng: {
+        type: String,
+        required: true
+    },
+    created: {
+        type: Date,
+        default: Date.now
+    }
+});
+
+const MarkerModel = mongoose.model('Marker', Marker);
+
 module.exports.UserModel = UserModel;
+module.exports.MarkerModel = MarkerModel;

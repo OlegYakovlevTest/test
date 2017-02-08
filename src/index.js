@@ -5,8 +5,19 @@ import configureStore from './store/configureStore';
 import { Provider } from 'react-redux';
 import App from './containers/App';
 import { AboutAuthor, Authorization, Home, Map } from './components';
+import $ from 'jquery';
 
 import { Router, Route, IndexRoute, browserHistory } from 'react-router';
+
+$.ajaxSetup({
+    beforeSend: function(xhr) {
+        const token = localStorage.getItem('token');
+        if (token) {
+            console.log('token', token);
+            xhr.setRequestHeader('Authorization', 'JWT ' + token);
+        }
+    }
+});
 
 const store = configureStore();
 

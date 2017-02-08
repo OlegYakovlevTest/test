@@ -5,15 +5,70 @@ const webpackConfig = require('./webpack.config');
 const express = require('express');
 const bodyParser = require('body-parser');
 const assert = require('assert');
+const passport = require('passport');
+const passportJWT = require("passport-jwt");
+const LocalStrategy = require('passport-local').Strategy;
+const jwt = require('jsonwebtoken');
+const _ = require("lodash");
 
 const app = new express();
 const compiler = webpack(webpackConfig);
 const config = require('./libs/config');
 const port = config.get('port');
+const ExtractJwt = passportJWT.ExtractJwt;
+const JwtStrategy = passportJWT.Strategy;
 
+const UserModel = require('./libs/mongoose').UserModel;
+const MarkerModel = require('./libs/mongoose').MarkerModel;
+const saveMarkers = require('./libs/mongoose').saveMarkers;
+
+const jwtOptions = {
+    jwtFromRequest: ExtractJwt.fromAuthHeader(),
+    secretOrKey: config.get('jwtSecret')
+};
+
+const strategy = new JwtStrategy(jwtOptions, function(jwt_payload, next) {
+    UserModel.findOne({_id: jwt_payload.id}, (err, user) => {
+        if (user) {
+            next(null, user);
+        } else {
+            next(null, false);
+        }
+    });
+});
+
+passport.use(strategy);
+
+// passport.use(new LocalStrategy(
+//     function(username, password, done) {
+//         UserModel.findOne({username, password}, (err, user) => {
+//             console.log(user);
+//             if (!err) {
+//                 return done(null, user);
+//             } else {
+//                 return done(err);
+//             }
+//         });
+//     }
+// ));
+
+passport.serializeUser(function(user, done) {
+    done(null, user.id);
+});
+
+passport.deserializeUser(function(id, done) {
+    User.findById(id, function(err, user) {
+        done(err, user);
+    });
+});
+
+app.use(passport.initialize());
 app.use(webpackDevMiddleware(compiler, { noInfo: true, publicPath: webpackConfig.output.publicPath }));
 app.use(webpackHotMiddleware(compiler));
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({
+    extended: true
+}));
 
 app.listen(port, (error) => {
     if (error) {
@@ -23,9 +78,9 @@ app.listen(port, (error) => {
     }
 });
 
-const UserModel = require('./libs/mongoose').UserModel;
 
-app.post('/api/user', function(req, res) {
+
+app.post('/signup', function(req, res) {
     const username = req.body.username;
     const password = req.body.password;
     UserModel.findOne({username}, (err, user) => {
@@ -54,18 +109,62 @@ app.post('/api/user', function(req, res) {
     });
 });
 
-app.get('/api/user', function(req, res) {
-    const username = req.query.username;
-    const password = req.query.password;
+app.post("/signin", function(req, res) {
+    const username = req.body.username;
+    const password = req.body.password;
     UserModel.findOne({username, password}, (err, user) => {
-        if (!err) {
-            return res.send({ status: 'OK', user });
+        if (!user) {
+            res.status(401).json({message:"no such user found"});
         } else {
-            console.error('Internal error(%d): %s', res.statusCode, err.message);
-            return res.sendStatus(500);
+            const payload = {id: user.id};
+            const token = jwt.sign(payload, jwtOptions.secretOrKey);
+            res.json({message: "ok", token, user});
         }
     });
 });
+
+app.post('/markers', passport.authenticate('jwt', { session: false }), function(req, res){
+    const markersForSave = req.body.filter(item => {
+        return !item._id;
+    });
+    const markersWithId = req.body.filter(item => {
+        return item._id;
+    });
+    saveMarkers(markersForSave);
+    MarkerModel.insertMany(markersForSave, (err, markers) => {
+        if (err) {
+            res.status(500).json({message:"Server error"});
+        } else {
+            res.json({message: "ok", markers: [...markersWithId, ...markers]});
+        }
+    })
+});
+
+app.get('/markers', passport.authenticate('jwt', { session: false }), function(req, res){
+    MarkerModel.find({username: req.user.username}, function(err, markers) {
+        if (err) {
+            res.status(500).json({message:"Server error"});
+        } else {
+            res.json({message: "ok", markers});
+        }
+    });
+});
+
+//check token
+app.get('/secret', passport.authenticate('jwt', { session: false }), function(req, res){
+    res.json("Success! You can not see this without a token");
+});
+
+app.get("/secretDebug",
+    function(req, res, next){
+        console.log(req.get('Authorization'));
+        next();
+    },
+    function(req, res){
+        res.json("debugging");
+    }
+);
+
 
 app.get("*", function(req, res) {
     res.sendFile(__dirname + '/index.html');
