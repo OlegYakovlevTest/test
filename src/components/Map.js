@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import {PageHeader} from 'react-bootstrap';
 import {connect} from 'react-redux';
 import {saveMarkers, getMarkers} from '../actions/MarkerActions';
+import { Grid, Row, Col } from 'react-bootstrap';
 
 @connect(state => ({
     markers: state.marker.markers,
@@ -24,21 +25,25 @@ export default class Authorization extends Component {
 
     render() {
         return (
-            <div>
+            <Grid>
                 <PageHeader>Map page</PageHeader>
-                <input type='text' ref='pacInput'/>
-                <div ref='testmap' style={{
-                    width: '800px',
-                    height: '600px',
-                    position: 'relative'
-                }}/>
-                <div>
-                    {this.props.markers.concat(this.state.markersForSave).map((item, index) => {
-                        return <span key={'info' + index}>{`${item.lat}, ${item.lng}`}<br/></span>
-                    })}
-                </div>
-                <button disabled={this.state.markersForSave.length < 1} onClick={this.saveMarkers}>Save</button>
-            </div>
+                <Row className='show-grid'>
+                    <Col xs={12} md={8}>
+                        <input type='text' ref='pacInput'/>
+                        <div ref='testmap' style={{
+                            height: '600px',
+                        }}/>
+                    </Col>
+                    <Col xs={6} md={4}>
+                        <div>
+                            {this.props.markers.concat(this.state.markersForSave).map((item, index) => {
+                                return <span key={'info' + index}>{`${item.lat}, ${item.lng}`}<br/></span>
+                            })}
+                        </div>
+                        <button disabled={this.state.markersForSave.length < 1} onClick={this.saveMarkers}>Save</button>
+                    </Col>
+                </Row>
+            </Grid>
         );
     }
 
