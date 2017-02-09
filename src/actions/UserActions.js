@@ -72,6 +72,8 @@ export function signUp(signUpData) {
                     jqXHR.status);
                 return;
             }
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('currentUser', JSON.stringify(data.user));
             browserHistory.push('/about');
             dispatch({
                 type: CREATE_USER_SUCCESS,

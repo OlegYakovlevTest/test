@@ -7,13 +7,12 @@ const bodyParser = require('body-parser');
 const assert = require('assert');
 const passport = require('passport');
 const passportJWT = require("passport-jwt");
-const LocalStrategy = require('passport-local').Strategy;
 const jwt = require('jsonwebtoken');
 const _ = require("lodash");
+const config = require('./libs/config');
 
 const app = new express();
 const compiler = webpack(webpackConfig);
-const config = require('./libs/config');
 const port = config.get('port');
 const ExtractJwt = passportJWT.ExtractJwt;
 const JwtStrategy = passportJWT.Strategy;
@@ -38,19 +37,6 @@ const strategy = new JwtStrategy(jwtOptions, function(jwt_payload, next) {
 
 passport.use(strategy);
 
-// passport.use(new LocalStrategy(
-//     function(username, password, done) {
-//         UserModel.findOne({username, password}, (err, user) => {
-//             console.log(user);
-//             if (!err) {
-//                 return done(null, user);
-//             } else {
-//                 return done(err);
-//             }
-//         });
-//     }
-// ));
-
 passport.serializeUser(function(user, done) {
     done(null, user.id);
 });
@@ -73,7 +59,7 @@ app.listen(port, (error) => {
     if (error) {
         console.error(error);
     } else {
-        console.info("==> 🌎  Listening on port %s. Open up http://localhost:%s/ in your browser.", port, port);
+        console.info("==>  Listening on port %s.", port);
     }
 });
 
@@ -99,7 +85,9 @@ app.post('/signup', function(req, res) {
         userModel.save(function (err) {
             if (!err) {
                 console.info('user created');
-                return res.send({ status: 'OK', user: userModel });
+                const payload = {id: userModel._id};
+                const token = jwt.sign(payload, jwtOptions.secretOrKey);
+                return res.send({message: "ok", token, user: userModel});
             } else {
                 console.error('Internal error(%d): %s', res.statusCode, err.message);
                 return res.sendStatus(500);

@@ -17,15 +17,15 @@ module.exports = {
         new webpack.HotModuleReplacementPlugin()
     ],
     module: {
-        preLoaders: [
-            {
-                test: /\.js$/,
-                loaders: ['eslint-loader'],
-                include: [
-                    path.resolve(__dirname, "src"),
-                ],
-            }
-        ],
+        // preLoaders: [
+        //     {
+        //         test: /\.js$/,
+        //         loaders: ['eslint-loader'],
+        //         include: [
+        //             path.resolve(__dirname, "src"),
+        //         ],
+        //     }
+        // ],
         loaders: [
             {
                 loaders: ['react-hot-loader', 'babel-loader'],

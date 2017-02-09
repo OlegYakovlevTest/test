@@ -1,9 +1,7 @@
-import React, { Component } from 'react';
-import { PageHeader } from 'react-bootstrap';
-import { connect } from 'react-redux';
-import { saveMarkers, getMarkers } from '../actions/MarkerActions';
-// import $ from 'jquery';
-import { Gmaps, Marker } from 'react-gmaps';
+import React, {Component} from 'react';
+import {PageHeader} from 'react-bootstrap';
+import {connect} from 'react-redux';
+import {saveMarkers, getMarkers} from '../actions/MarkerActions';
 
 @connect(state => ({
     markers: state.marker.markers,
@@ -14,57 +12,38 @@ export default class Authorization extends Component {
 
     constructor(props) {
         super(props);
-        this.searchParam = '';
+        this.map = null;
+        this.markers = this.props.markers;
         this.state = {
-            latitude: 54.98,
-            longitude: 82.89,
+            latitude: -34,
+            longitude: 151,
+            markersForSave: [],
             coords: this.props.markers
         };
     }
 
     render() {
-        const coords = {
-            lat: 46.47,
-            lng: 30.74
-        };
         return (
             <div>
                 <PageHeader>Map page</PageHeader>
-
+                <input type='text' ref='pacInput'/>
+                <div ref='testmap' style={{
+                    width: '800px',
+                    height: '600px',
+                    position: 'relative'
+                }}/>
                 <div>
-                    {this.state.coords.map((item, index) => {
-                        console.log(item);
+                    {this.props.markers.concat(this.state.markersForSave).map((item, index) => {
                         return <span key={'info' + index}>{`${item.lat}, ${item.lng}`}<br/></span>
                     })}
                 </div>
-                <button disabled={this.state.coords.length < 1} onClick={this.saveMarkers}>Save</button>
-                <input type='text' onChange={this.onSearchParamChange} />
-                <button onClick={this.getByType}>Search</button>
-                <Gmaps
-                    width={'800px'}
-                    height={'600px'}
-                    lat={coords.lat}
-                    lng={coords.lng}
-                    zoom={12}
-                    loadingMessage={'Be happy'}
-                    params={{v: '3.exp', key: 'AIzaSyCDHXjhlHCPZ9gCp2QQD2-tKZ2kuhXJcmY'}}
-                    onMapCreated={this.onMapCreated}
-                    onClick={this.onMapClick}>
-                    {this.state.coords.map((item, index) => {
-                        console.log(item);
-                        return <Marker key={'marker' + index}
-                            lat={item.lat}
-                            lng={item.lng}
-                            draggable={true}
-                            onDragEnd={this.onDragEnd} />
-                    })}
-
-                </Gmaps>
+                <button disabled={this.state.markersForSave.length < 1} onClick={this.saveMarkers}>Save</button>
             </div>
         );
     }
 
     componentDidMount() {
+        this.initMap();
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(this.setLocation);
         } else {
@@ -74,90 +53,109 @@ export default class Authorization extends Component {
     }
 
     componentWillReceiveProps(nextProps) {
-        if(this.state.coords.length < nextProps.markers.length) {
-            this.setState({coords: nextProps.markers})
-        }
+        this.markers.forEach((marker) => {
+            marker.setMap(null);
+        });
+        this.markers = [];
+        nextProps.markers.forEach((marker) => {
+            this.markers.push(new google.maps.Marker({
+                map: this.map,
+                position: new google.maps.LatLng(marker.lat, marker.lng)
+            }));
+        });
     }
 
-    onSearchParamChange = (e) => {
-        this.searchParam = e.target.value;
-    };
+    initMap = () => {
+        this.map = new google.maps.Map(this.refs.testmap, {
+            center: {lat: this.state.latitude, lng: this.state.longitude},
+            zoom: 13,
+            mapTypeId: google.maps.MapTypeId.ROADMAP
+        });
 
-    getByType = () => {
-        // var pyrmont = new google.maps.LatLng(-33.8665433,151.1956316);
-        // var request = {
-        //     location: pyrmont,
-        //     radius: '500',
-        //     query: 'restaurant'
-        // };
-        //
-        // var service = new google.maps.places.PlacesService(document.createElement('div'));
-        //
-        // service.getDetails(request, function(place, status) {
-        //     console.log(status)
-        //     if (status == google.maps.places.PlacesServiceStatus.OK) {
-        //         console.log(place)
-        //         var marker = new google.maps.Marker({
-        //             map: map,
-        //             position: place.geometry.location
-        //         });
-        //         google.maps.event.addListener(marker, 'click', function() {
-        //             infowindow.setContent(place.name);
-        //             infowindow.open(map, this);
-        //         });
-        //     }
-        // });
-        // GMaps.geocode({
-        //     address: $('#address').val(),
-        //     callback: function(results, status) {
-        //         if (status == 'OK') {
-        //             var latlng = results[0].geometry.location;
-        //             map.setCenter(latlng.lat(), latlng.lng());
-        //             map.addMarker({
-        //                 lat: latlng.lat(),
-        //                 lng: latlng.lng()
-        //             });
-        //         }
-        //     }
-        // });
-        // $.ajax({
-        //     method: 'GET',
-        //     url: 'http://catalog.api.2gis.ru/2.0/catalog/branch/search?q=' + this.searchParam + '&region_id=14&key=ruslll3489',
-        // }).done(function (data) {
-        //     console.log(data);
-        // }).fail(function (jqXHR, textStatus) {
-        //     console.error(textStatus);
-        // });
+        const input = this.refs.pacInput;
+        const searchBox = new google.maps.places.SearchBox(input);
+
+        this.map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+        this.map.addListener('bounds_changed', () => {
+            searchBox.setBounds(this.map.getBounds());
+        });
+        this.map.addListener('click', this.onMapClick);
+
+        searchBox.addListener('places_changed', () => {
+            const places = searchBox.getPlaces();
+
+            if (places.length == 0) {
+                return;
+            }
+
+            this.markers.forEach((marker) => {
+                marker.setMap(null);
+            });
+            this.markers = [];
+
+            let bounds = new google.maps.LatLngBounds();
+            places.forEach((place) => {
+                const icon = {
+                    url: place.icon,
+                    size: new google.maps.Size(71, 71),
+                    origin: new google.maps.Point(0, 0),
+                    anchor: new google.maps.Point(17, 34),
+                    scaledSize: new google.maps.Size(25, 25)
+                };
+
+                this.markers.push(new google.maps.Marker({
+                    map: this.map,
+                    icon: icon,
+                    title: place.name,
+                    position: place.geometry.location
+                }));
+
+                if (place.geometry.viewport) {
+                    bounds.union(place.geometry.viewport);
+                } else {
+                    bounds.extend(place.geometry.location);
+                }
+            });
+            this.map.fitBounds(bounds);
+        });
     };
 
     saveMarkers = () => {
-        this.props.saveMarkers(this.state.coords);
-        console.log('save markers');
+        this.props.saveMarkers(this.state.markersForSave);
     };
 
     onMapClick = (e) => {
         const lat = e.latLng.lat();
         const lng = e.latLng.lng();
-        const existedMarker = this.state.coords.find(el => {
-            return el.lat === lat && el.lng === lng;
+
+        this.markers.forEach((marker) => {
+            marker.setMap(null);
         });
-        if (!existedMarker) {
-            this.setState({
-                coords: [
-                    ...this.state.coords,
-                    {
-                        username: this.props.user.username,
-                        lat,
-                        lng
-                    }]
-            });
-        }
+        this.markers = [];
+        this.props.markers.forEach((marker) => {
+            this.markers.push(new google.maps.Marker({
+                map: this.map,
+                position: new google.maps.LatLng(marker.lat, marker.lng)
+            }));
+        });
+        this.markers.push(new google.maps.Marker({
+            map: this.map,
+            position: new google.maps.LatLng(lat, lng)
+        }));
+
+        this.setState({
+            markersForSave: [
+                ...this.state.markersForSave,
+                {
+                    username: this.props.user.username,
+                    lat,
+                    lng
+                }
+            ]
+        });
     };
 
     setLocation = (position) => {
-        this.setState({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-        });
+        this.map.panTo(new google.maps.LatLng(position.coords.latitude, position.coords.longitude));
     }
 }
