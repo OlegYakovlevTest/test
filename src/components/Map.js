@@ -54,7 +54,7 @@ export default class Authorization extends Component {
 
     componentWillReceiveProps(nextProps) {
         this.markers.forEach((marker) => {
-            marker.setMap(null);
+            if(marker.setMap) {marker.setMap(null);}
         });
         this.markers = [];
         nextProps.markers.forEach((marker) => {
